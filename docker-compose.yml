@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: newproject_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: newproject
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - newproject_network
+
+  rabbitmq: 
+    image: 'rabbitmq:3-management'
+    container_name: rabbitmq
+    hostname: "rabbit"
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - "5672:5672" 
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq/ 
+    networks: 
+      - newproject_network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: speed-dating-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes --requirepass redis123
+    volumes:
+      - redis_data:/data
+    networks:
+      - newproject_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: speed-dating-redis-ui
+    restart: unless-stopped
+    ports:
+      - '8081:8081'
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:redis123
+    networks:
+      - newproject_network
+    depends_on:
+      - redis
+
+volumes:
+  postgres_data:
+    driver: local
+  rabbitmq-data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  newproject_network:
+    driver: bridge
+  speed-dating-network:
+    driver: bridge
