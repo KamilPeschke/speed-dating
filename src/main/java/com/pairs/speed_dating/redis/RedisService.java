@@ -38,6 +38,7 @@ public class RedisService {
 
       pipeline.setex(USER_DATA_PREFIX + userId, USER_DATA_TTL_SECONDS, userData);
       pipeline.sync();
+
     } catch (Exception error) {
       log.error("Error while adding a user: {} to pool", userId, error);
       throw new RuntimeException("Error while adding a user");
@@ -80,10 +81,20 @@ public class RedisService {
     }
   }
 
+//  private GeoSearchParam getRadiusKm(GeoSearchParam geoSearchParam){
+//    return geoSearchParam.byRadius(10, GeoUnit.KM);
+//  }
+
   //TODO we should check for filters = null
   @SneakyThrows
   public Filters getFilters(UUID userId) {
-    String client = redisClient.get(USER_DATA_PREFIX + userId);
-    return objectMapper.readValue(client, Filters.class);
+    String userData = redisClient.get(USER_DATA_PREFIX + userId);
+
+    if(userData == null){
+      log.warn("User {} has no data", userId);
+      return new Filters(0, 0, null);
+    }
+
+    return objectMapper.readValue(userData, Filters.class);
   }
 }

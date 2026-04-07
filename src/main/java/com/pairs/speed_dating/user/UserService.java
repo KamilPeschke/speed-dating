@@ -4,6 +4,7 @@ import com.pairs.speed_dating.core.exception.UserAlreadyExistsException;
 import com.pairs.speed_dating.event.UserChangeStatusEvent;
 import com.pairs.speed_dating.core.exception.UserNotFoundException;
 import com.pairs.speed_dating.redis.LocalizationWithCoordinates;
+import com.pairs.speed_dating.redis.LocalizationWithRadius;
 import com.pairs.speed_dating.user.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Date;
 import java.util.UUID;
 
 @Slf4j
@@ -37,6 +39,7 @@ public class UserService {
       .age(user.getAge())
       .gender(user.getGender())
       .interestedIn(user.getInterestedIn())
+      .createdAt(Date.from(java.time.Instant.now()))
       .build();
 
     UserEntity savedUser = userRepository.save(userEntity);
@@ -81,9 +84,10 @@ public class UserService {
     applicationEventPublisher.publishEvent(
       new UserChangeStatusEvent(
         output,
-        new LocalizationWithCoordinates(
+        new LocalizationWithRadius(
           updateUserStatus.getLocalization().getLat(),
-          updateUserStatus.getLocalization().getLon()
+          updateUserStatus.getLocalization().getLon(),
+          updateUserStatus.getLocalization().getRadiusKm()
         ),
         updateUserStatus.getFilters()
       )

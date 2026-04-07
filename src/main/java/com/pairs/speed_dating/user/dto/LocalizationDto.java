@@ -19,4 +19,9 @@ public class LocalizationDto {
   @DecimalMin(value = "-180.0", message = "Longitude must be at least -180")
   @DecimalMax(value = "180.0", message = "Longitude must be at most 180")
   private Double lon;
+
+  @NotNull(message = "Radius is required")
+  @DecimalMin(value = "0.0", message = "Radius must be at least 0 km")
+  @DecimalMax(value = "3", message = "Radius must be at most 3 km")
+  private double radiusKm;
 }
