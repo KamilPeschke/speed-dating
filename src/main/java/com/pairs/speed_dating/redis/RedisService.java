@@ -50,7 +50,6 @@ public class RedisService {
       pipeline.zrem(AVAILABLE_USERS_KEY, userId.toString());
       pipeline.del(USER_DATA_PREFIX + userId);
 
-      log.info("User {} removed from available pool", userId);
       pipeline.sync();
     } catch (Exception error) {
       log.error("Error while removing a user: {} from pool", userId, error);
@@ -81,17 +80,14 @@ public class RedisService {
     }
   }
 
-//  private GeoSearchParam getRadiusKm(GeoSearchParam geoSearchParam){
-//    return geoSearchParam.byRadius(10, GeoUnit.KM);
-//  }
-
-  //TODO we should check for filters = null
+  //TODO that method should bring all users using mget and return a MAP (Potential N+1 problem)
   @SneakyThrows
   public Filters getFilters(UUID userId) {
     String userData = redisClient.get(USER_DATA_PREFIX + userId);
 
     if(userData == null){
       log.warn("User {} has no data", userId);
+      //This is only work around because of old data in redis.
       return new Filters(0, 0, null);
     }
 

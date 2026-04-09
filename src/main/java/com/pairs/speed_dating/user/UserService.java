@@ -1,9 +1,9 @@
 package com.pairs.speed_dating.user;
 
 import com.pairs.speed_dating.core.exception.UserAlreadyExistsException;
-import com.pairs.speed_dating.event.UserChangeStatusEvent;
 import com.pairs.speed_dating.core.exception.UserNotFoundException;
-import com.pairs.speed_dating.redis.LocalizationWithCoordinates;
+import com.pairs.speed_dating.event.UserChangeStatusToAvailableEvent;
+import com.pairs.speed_dating.event.UserChangeStatusToUnavailableEvent;
 import com.pairs.speed_dating.redis.LocalizationWithRadius;
 import com.pairs.speed_dating.user.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class UserService {
 
     if(userRepository.existsByEmail(user.getEmail())){
       throw new UserAlreadyExistsException(user.getEmail());
-    };
+    }
 
     UserEntity userEntity = UserEntity.builder()
       .email(user.getEmail())
@@ -51,7 +51,7 @@ public class UserService {
       savedUser.getId()
     );
   }
-
+  //TODO for future refresh button
   @Transactional(readOnly = true)
   public GetUserAgeAndGenderResponse getUserAgeAndGender(UUID userId) {
     UserEntity userEntity = userRepository.findById(userId).orElseThrow(()->
@@ -63,9 +63,9 @@ public class UserService {
   }
 
   @Transactional
-  public UpdateUserStatus updateUserStatus(
+  public UpdateUserStatus updateUserStatusToAvailable(
     UUID userId,
-    UpdateUserStatusDto updateUserStatus
+    UpdateUserStatusToAvailableDto updateUserStatus
   ) {
     log.info("Updating user status for user with id {} and status {}", userId, updateUserStatus.getStatus());
     UserEntity user = userRepository.findById(userId).orElseThrow(() ->
@@ -82,7 +82,7 @@ public class UserService {
     log.info("Publishing update user status event for user {} and status {}" , userId, user.getStatus());
 
     applicationEventPublisher.publishEvent(
-      new UserChangeStatusEvent(
+      new UserChangeStatusToAvailableEvent(
         output,
         new LocalizationWithRadius(
           updateUserStatus.getLocalization().getLat(),
@@ -94,5 +94,35 @@ public class UserService {
     );
 
     return new UpdateUserStatus(user.getId(), user.getStatus());
+  }
+
+  @Transactional
+  public UpdateUserStatus updateUserStatusToUnavailable(
+    UUID userId,
+    UpdateUserStatusToUnavailableDto updateUserStatus
+  ) {
+    UserEntity user = userRepository.findById(userId).orElseThrow(() ->
+      new UserNotFoundException(userId));
+
+    user.changeStatus(updateUserStatus.getUserStatus());
+
+    applicationEventPublisher.publishEvent(
+      new UserChangeStatusToUnavailableEvent(
+        userId,
+        updateUserStatus.getUserStatus()
+      )
+    );
+  return new UpdateUserStatus(userId, user.getStatus());
+  }
+
+  //TODO for future changes - only for testing purposes
+  public UserEntity login(LoginDto credentials) {
+    UserEntity user = userRepository.findByEmail(credentials.getEmail()).orElseThrow(() ->
+      new UserNotFoundException(credentials.getEmail()));
+    if(!passwordEncoder.matches(credentials.getPassword(), user.getPassword())){
+      log.warn("Invalid credentials");
+      throw new RuntimeException("Invalid credentials");
+    }
+    return user;
   }
 }

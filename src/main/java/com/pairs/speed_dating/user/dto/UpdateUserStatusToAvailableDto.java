@@ -6,11 +6,11 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-@Data
+@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateUserStatusDto {
+public class UpdateUserStatusToAvailableDto {
   @NotNull(message = "User status is required")
   UserStatus status;
 
@@ -18,7 +18,7 @@ public class UpdateUserStatusDto {
   @Valid
   private LocalizationDto localization;
 
-  @NotNull(message = "Name is required")
+  @NotNull(message = "Filters like age, gender, etc are required")
   @Valid
   private Filters filters;
 }

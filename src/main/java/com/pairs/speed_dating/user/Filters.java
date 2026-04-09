@@ -1,8 +1,8 @@
 package com.pairs.speed_dating.user;
 
 public record Filters(
-  int ageFrom,
-  int ageTo,
+  Integer ageFrom,
+  Integer ageTo,
   Gender gender
 ) {
 }

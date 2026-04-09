@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 import com.pairs.speed_dating.user.Gender;
 
-@Data
+@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

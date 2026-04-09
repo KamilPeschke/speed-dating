@@ -5,7 +5,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-@Data
+@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,5 +23,5 @@ public class LocalizationDto {
   @NotNull(message = "Radius is required")
   @DecimalMin(value = "0.0", message = "Radius must be at least 0 km")
   @DecimalMax(value = "3", message = "Radius must be at most 3 km")
-  private double radiusKm;
+  private Double radiusKm;
 }

@@ -42,8 +42,6 @@ public class DiscoveryService {
       return List.of();
     }
 
-    log.info("Found {} nearby users found, userId: {}", filterResult.size(), userId);
-
     Map<UUID, Double> distanceMap = filterResult.stream()
       .collect(Collectors.toMap(
         GeoQueryResult::getUserId,
@@ -54,6 +52,12 @@ public class DiscoveryService {
 
     //Getting a full profile of our users with pictures
     List<UserProfileWithoutDistance> userProfileWithoutDistance = userRepository.findByIdInAndDeletedAtIsNullAndStatus(nearbyUsersId, UserStatus.AVAILABLE);
+
+    if(userProfileWithoutDistance.isEmpty()){
+      log.warn("[WARN] Can't find any profiles with provided ID's, returning empty list instead");
+      log.debug(userProfileWithoutDistance.toString());
+      return List.of();
+    }
 
     List<UserProfile> userProfilesWithDistance = userProfileWithoutDistance.stream()
       .map(u -> {
@@ -70,8 +74,9 @@ public class DiscoveryService {
       })
     .toList();
 
-    log.info("Streaming list of users for {}" , userId);
+    log.info("Streaming list of users for userId: {}, number of users nearby {}" , userId, userProfilesWithDistance.size());
 
+    //TODO filter earlier
     return filterNearbyUserByAgeAndGender(filters, userProfilesWithDistance);
   }
 
@@ -98,7 +103,7 @@ public class DiscoveryService {
     ).toList();
   }
 
-  public UserStatus addUserToPoolAfterStatusChanges(
+  public void addUserToPoolAfterStatusChanges(
     UUID userId,
     UserStatus status,
     LocalizationWithRadius localization,
@@ -116,10 +121,9 @@ public class DiscoveryService {
       );
 
     log.info("User {} has been added to the pool", userId);
-    return status;
   }
 
-  public UserStatus removeUserFromPoolAfterStatusChanges(
+  public void removeUserFromPoolAfterStatusChanges(
     UUID userId,
     UserStatus userStatus
   ){
@@ -129,6 +133,5 @@ public class DiscoveryService {
     }
     redisService.removeUserFromAvailablePool(userId);
     log.info("User {} has been removed from the pool", userId);
-    return userStatus;
   }
 }
