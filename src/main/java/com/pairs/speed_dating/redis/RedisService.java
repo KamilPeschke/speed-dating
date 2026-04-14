@@ -1,6 +1,7 @@
 package com.pairs.speed_dating.redis;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pairs.speed_dating.user.Filters;
+import com.pairs.speed_dating.user.Gender;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +12,9 @@ import redis.clients.jedis.args.GeoUnit;
 import redis.clients.jedis.params.GeoSearchParam;
 import redis.clients.jedis.resps.GeoRadiusResponse;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -29,12 +32,20 @@ public class RedisService {
     UUID userId,
     double lon,
     double lat,
+    int currentUserAge,
+    Gender currentUserGender,
     Filters filters
   ){
     try (Pipeline pipeline = redisClient.pipelined()) {
+      //TODO geoadd need another method for deleting keys after some time - setex have this feature but not geoadd (TTL).
       pipeline.geoadd(AVAILABLE_USERS_KEY, lon, lat, String.valueOf(userId));
 
-      String userData = objectMapper.writeValueAsString(filters);
+      FiltersAndBasicData filtersAndBasicData = new FiltersAndBasicData(
+        filters,
+        currentUserAge,
+        currentUserGender
+      );
+      String userData = objectMapper.writeValueAsString(filtersAndBasicData);
 
       pipeline.setex(USER_DATA_PREFIX + userId, USER_DATA_TTL_SECONDS, userData);
       pipeline.sync();
@@ -80,17 +91,28 @@ public class RedisService {
     }
   }
 
-  //TODO that method should bring all users using mget and return a MAP (Potential N+1 problem)
   @SneakyThrows
-  public Filters getFilters(UUID userId) {
-    String userData = redisClient.get(USER_DATA_PREFIX + userId);
-
-    if(userData == null){
-      log.warn("User {} has no data", userId);
-      //This is only work around because of old data in redis.
-      return new Filters(0, 0, null);
+  public Map<UUID, FiltersAndBasicData> getFilters(List<UUID> userId) {
+    if(userId == null || userId.isEmpty()){
+      return Map.of();
     }
 
-    return objectMapper.readValue(userData, Filters.class);
+    List<String> userIdWithPrefix = userId.stream()
+      .map(UUID::toString)
+      .map(u -> USER_DATA_PREFIX + u)
+      .toList();
+
+    List<String> userData = redisClient.mget(userIdWithPrefix.toArray(new String[0]));
+    Map<UUID, FiltersAndBasicData> filtersMap = new HashMap<>();
+
+    for(int i=0; i<=userData.size() - 1; i++){
+      String currentUserData = userData.get(i);
+      if(currentUserData == null){
+        continue;
+      }
+      FiltersAndBasicData filtersAndBasicData = objectMapper.readValue(currentUserData, FiltersAndBasicData.class);
+      filtersMap.put(userId.get(i), filtersAndBasicData);
+    }
+    return filtersMap;
   }
 }

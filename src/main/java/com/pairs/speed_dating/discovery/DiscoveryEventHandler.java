@@ -16,7 +16,7 @@ import java.util.List;
 public class DiscoveryEventHandler {
   private final DiscoveryService discoveryService;
   private final SimpMessagingTemplate simpMessagingTemplate;
-  private static final String HANDLE_USER_STATUS_CHANGE_EVENT_PATH = "queue/userStatusChange";
+  private static final String HANDLE_AVAILABLE_USER_STATUS_CHANGE_EVENT_PATH = "queue/userStatusChange";
 
   @EventListener
   public void handleUserStatusChangeToAvailable(UserChangeStatusToAvailableEvent event){
@@ -24,20 +24,25 @@ public class DiscoveryEventHandler {
       event.output().getUserId(),
       event.output().getUserStatus(),
       event.localization(),
-      event.filters()
+      event.filters(),
+      event.output().getAge(),
+      event.output().getGender()
     );
 
     List<UserProfile> users = discoveryService.handleFilterByAgeAndGender(
       event.output().getUserId(),
-      event.output().getAge(),
-      event.output().getGender(),
-      event.localization(),
-      event.filters()
+      //TODO we can change this to different record using MapStruct
+      new FilterAgeAndGenderRequest(
+        event.output().getAge(),
+        event.output().getGender(),
+        event.localization(),
+        event.filters()
+      )
     );
 
     simpMessagingTemplate.convertAndSendToUser(
       event.output().getUserId().toString(),
-      HANDLE_USER_STATUS_CHANGE_EVENT_PATH,
+      HANDLE_AVAILABLE_USER_STATUS_CHANGE_EVENT_PATH,
       users
     );
   }

@@ -1,6 +1,7 @@
 package com.pairs.speed_dating.user;
 
 import com.pairs.speed_dating.user.dto.*;
+import com.pairs.speed_dating.user.response.CreateUserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,21 +23,19 @@ public class UserController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<UserEntity> loginUser(@RequestBody LoginDto credentials) {
+  public ResponseEntity<UUID> loginUser(@Valid @RequestBody LoginDto credentials) {
     return ResponseEntity.status(HttpStatus.OK).body(userService.login(credentials));
   }
-
+  //TODO take userId from token JWT/handshake
   @PostMapping("/{id}/status-available")
-  public ResponseEntity<UpdateUserStatus>  updateUserStatusToAvailable(
+  public ResponseEntity<UpdateUserStatus> updateUserStatusToAvailable(
     @PathVariable("id") UUID userId,
     @Valid @RequestBody UpdateUserStatusToAvailableDto userStatus) {
     return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserStatusToAvailable(userId, userStatus));
   }
 
   @PostMapping("/{id}/status-unavailable")
-  public ResponseEntity<UpdateUserStatus>  updateUserStatusToUnavailable(
-    @PathVariable("id") UUID userId,
-    @Valid @RequestBody UpdateUserStatusToUnavailableDto userStatus) {
-    return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserStatusToUnavailable(userId, userStatus));
+  public ResponseEntity<UpdateUserStatus> updateUserStatusToUnavailable(@PathVariable("id") UUID userId) {
+    return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserStatusToUnavailable(userId));
   }
 }

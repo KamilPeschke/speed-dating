@@ -1,4 +1,4 @@
-package com.pairs.speed_dating.user.dto;
+package com.pairs.speed_dating.user.response;
 
 import java.util.UUID;
 

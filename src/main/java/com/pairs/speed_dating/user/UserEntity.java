@@ -44,19 +44,20 @@ public class UserEntity {
   @Enumerated(EnumType.STRING)
   private Gender interestedIn;
 
-  @Column(nullable = true)
+  @Column()
   private String profilePhotoLink;
 
-  @Column(nullable = true)
+//  @JdbcTypeCode(SqlTypes.JSON)
+  @Column()
   private List<String> photos;
 
   @Column(nullable = false)
   private Date createdAt;
 
-  @Column(nullable = true)
+  @Column()
   private Date updatedAt;
 
-  @Column(nullable = true)
+  @Column()
   private Date deletedAt;
 
   @Builder

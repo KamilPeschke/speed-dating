@@ -4,5 +4,4 @@ public record Filters(
   Integer ageFrom,
   Integer ageTo,
   Gender gender
-) {
-}
+) {}

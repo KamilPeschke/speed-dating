@@ -1,5 +1,5 @@
-package com.pairs.speed_dating.user.dto;
-import com.pairs.speed_dating.user.UserStatus;
+package com.pairs.speed_dating.user;
 import java.util.UUID;
 
+//TODO change naming convection
 public record UpdateUserStatus(UUID userId, UserStatus userStatus) {}

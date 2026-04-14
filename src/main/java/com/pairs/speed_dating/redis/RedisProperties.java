@@ -7,5 +7,4 @@ public record RedisProperties(
   String host,
   int port,
   String password
-) {
-}
+) {}

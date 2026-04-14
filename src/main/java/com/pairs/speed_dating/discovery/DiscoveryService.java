@@ -1,5 +1,6 @@
 package com.pairs.speed_dating.discovery;
 
+import com.pairs.speed_dating.redis.FiltersAndBasicData;
 import com.pairs.speed_dating.redis.GeoQueryResult;
 import com.pairs.speed_dating.redis.LocalizationWithRadius;
 import com.pairs.speed_dating.redis.RedisService;
@@ -26,88 +27,106 @@ public class DiscoveryService {
 
   public List<UserProfile> handleFilterByAgeAndGender(
     UUID userId,
-    int age,
-    Gender gender,
-    LocalizationWithRadius localization,
-    Filters filters
+    FilterAgeAndGenderRequest userFilters
   ){
-    List<GeoQueryResult> nearbyUsers = redisService.findNearbyUsers(localization);
-    List<GeoQueryResult> filterResult = nearbyUsers.stream()
-      .filter(u -> matchNearbyUsersWithFilters(u.getUserId(), gender, age))
-      .filter(u -> !userId.equals(u.getUserId()))
-      .toList();
+    //TODO Temporary solution (DTO)
+    if(userId == null || userFilters == null || userFilters.userAge() == null || userFilters.userGender() == null){
+      log.error("Invalid data");
+      throw new IllegalArgumentException("Invalid data");
+    }
 
-    if(filterResult.isEmpty()){
+    List<GeoQueryResult> nearbyUsers = redisService.findNearbyUsers(userFilters.localization());
+    List<UUID> usersIdForFiltering = nearbyUsers.stream().map(GeoQueryResult::getUserId).toList();
+    Map<UUID, FiltersAndBasicData> profilesWhereUserMatchCriteria = checkIfUserMatchOtherUsersCriteria(
+      usersIdForFiltering,
+      userFilters.userGender(),
+      userFilters.userAge()
+    );
+
+    if(profilesWhereUserMatchCriteria.isEmpty()){
       log.info("No nearby users found, return empty list, userId: {}", userId);
       return List.of();
     }
 
-    Map<UUID, Double> distanceMap = filterResult.stream()
-      .collect(Collectors.toMap(
-        GeoQueryResult::getUserId,
-        GeoQueryResult::getDistance
-      ));
+    Set<UUID> nearbyUsersId = filterNearbyUserByAgeAndGender(userFilters.filters(), profilesWhereUserMatchCriteria);
 
-    Set<UUID> nearbyUsersId = distanceMap.keySet();
+    if(nearbyUsersId.isEmpty()){
+      log.info("No nearby users found, return empty list, userId: {}", userId);
+      return List.of();
+    }
 
     //Getting a full profile of our users with pictures
     List<UserProfileWithoutDistance> userProfileWithoutDistance = userRepository.findByIdInAndDeletedAtIsNullAndStatus(nearbyUsersId, UserStatus.AVAILABLE);
 
     if(userProfileWithoutDistance.isEmpty()){
       log.warn("[WARN] Can't find any profiles with provided ID's, returning empty list instead");
-      log.debug(userProfileWithoutDistance.toString());
       return List.of();
     }
+
+    Map<UUID, Double> distanceMap = nearbyUsers.stream()
+      .filter(u -> u.getUserId() != null)
+      .collect(Collectors.toMap(
+        GeoQueryResult::getUserId,
+        GeoQueryResult::getDistance
+      ));
 
     List<UserProfile> userProfilesWithDistance = userProfileWithoutDistance.stream()
       .map(u -> {
         double distance = distanceMap.get(u.id());
-        return UserProfile.builder()
-          .userId(u.id())
-          .name(u.name())
-          .age(u.age())
-          .gender(u.gender())
-          .distance(distance)
-          .profilePhotoLink(u.profilePhotoLink())
-          .photos(u.photos())
-          .build();
+        return new UserProfile(
+          u.id(),
+          u.name(),
+          u.age(),
+          u.gender(),
+          distance,
+          u.profilePhotoLink(),
+          u.photos()
+        );
       })
     .toList();
 
     log.info("Streaming list of users for userId: {}, number of users nearby {}" , userId, userProfilesWithDistance.size());
 
-    //TODO filter earlier
-    return filterNearbyUserByAgeAndGender(filters, userProfilesWithDistance);
+    return userProfilesWithDistance;
   }
 
-  private boolean matchNearbyUsersWithFilters(
-    UUID userId,
-    Gender gender,
-    int age
+  private Map<UUID, FiltersAndBasicData> checkIfUserMatchOtherUsersCriteria(
+    List<UUID> userId,
+    Gender userGender,
+    int userAge
   ){
-    Filters nearbyUserFilters = redisService.getFilters(userId);
-    if(nearbyUserFilters.gender() == gender){
-      return nearbyUserFilters.ageFrom() <= age && nearbyUserFilters.ageTo() >= age;
-    }
-    return false;
+    Map<UUID, FiltersAndBasicData> nearbyUserFilters = redisService.getFilters(userId);
+    return nearbyUserFilters.entrySet().stream()
+      .filter(nearbyUser -> nearbyUser.getValue() != null &&
+        nearbyUser.getValue().filters().gender() == userGender &&
+        nearbyUser.getValue().filters().ageFrom() <= userAge &&
+        nearbyUser.getValue().filters().ageTo() >= userAge)
+      .collect(Collectors.toMap(
+        Map.Entry::getKey,
+        Map.Entry::getValue
+      ));
   }
 
-  private List<UserProfile> filterNearbyUserByAgeAndGender(
-    Filters filters,
-    List<UserProfile> userProfiles
+  private Set<UUID> filterNearbyUserByAgeAndGender(
+    Filters userFilters,
+    Map<UUID, FiltersAndBasicData> nearbyUsers
   ){
-    return userProfiles.stream().filter(u ->
-        filters.ageFrom() <= u.getAge() &&
-        filters.ageTo() >= u.getAge() &&
-        filters.gender() == u.getGender()
-    ).toList();
+    return nearbyUsers.entrySet().stream()
+      .filter(nearbyUserData -> nearbyUserData.getValue() != null &&
+        userFilters.ageFrom() <= nearbyUserData.getValue().currentUserAge() &&
+          userFilters.ageTo() >= nearbyUserData.getValue().currentUserAge()
+        && userFilters.gender() == nearbyUserData.getValue().currentUserGender())
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toSet());
   }
 
   public void addUserToPoolAfterStatusChanges(
     UUID userId,
     UserStatus status,
     LocalizationWithRadius localization,
-    Filters filters
+    Filters filters,
+    int currentUserAge,
+    Gender currentUserGender
   ){
     if(status == null){
       log.error("Status cannot be null");
@@ -117,6 +136,8 @@ public class DiscoveryService {
         userId,
         localization.lon(),
         localization.lat(),
+        currentUserAge,
+        currentUserGender,
         filters
       );
 
@@ -129,7 +150,7 @@ public class DiscoveryService {
   ){
     if(userStatus == null || userId == null){
       log.error("Status or userId cannot be null");
-      throw new IllegalArgumentException("Status cannot be null");
+      throw new IllegalArgumentException("Invalid data");
     }
     redisService.removeUserFromAvailablePool(userId);
     log.info("User {} has been removed from the pool", userId);
