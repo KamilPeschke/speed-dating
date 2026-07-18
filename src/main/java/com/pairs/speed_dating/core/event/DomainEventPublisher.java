@@ -1,4 +1,4 @@
-package com.pairs.speed_dating.event;
+package com.pairs.speed_dating.core.event;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;

@@ -1,6 +1,7 @@
-package com.pairs.speed_dating.discovery;
+package com.pairs.speed_dating.user;
 
-import com.pairs.speed_dating.user.Gender;
+import com.pairs.speed_dating.user.domain.Gender;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
