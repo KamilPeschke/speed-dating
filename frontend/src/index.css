@@ -1,0 +1,110 @@
+@import 'tailwindcss';
+
+/* Paleta przeniesiona 1:1 ze starego FE (React Native) */
+@theme {
+  --color-navy: #023092; /* primary — przyciski, aktywne taby, moje dymki */
+  --color-navydark: #051f57; /* tło ekranu logowania */
+  --color-blush: #ff4b6e; /* akcent — serca, okrąg zasięgu */
+  --color-blushlight: #ff8da1;
+  --color-paper: #f0f2f5; /* tła list/czatu */
+  --color-ink: #1a1a1a; /* tekst główny */
+  --color-mut: #65676b; /* tekst drugorzędny */
+  --color-line: #e4e6eb; /* separatory */
+  --color-avail: #4caf50; /* status AVAILABLE */
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+.leaflet-container {
+  font-family: inherit;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: rgb(0 0 0 / 0.12);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ── Animacje przeniesione z ChatScreen (celebracja matcha) ── */
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes heart-pop {
+  0% {
+    transform: scale(0) rotate(-15deg);
+  }
+  60% {
+    transform: scale(1.25) rotate(15deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+@keyframes float-heart {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.35;
+    transform: translateY(-12px);
+  }
+}
+@keyframes pulse-heart {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.25);
+  }
+}
+
+.anim-slide-in-left {
+  animation: slide-in-left 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.1) both;
+}
+.anim-slide-in-right {
+  animation: slide-in-right 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.1) both;
+}
+.anim-heart-pop {
+  animation: heart-pop 0.6s 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+}
+.anim-float-heart {
+  animation: float-heart 3s ease-in-out infinite;
+}
+.anim-pulse-heart {
+  animation: pulse-heart 1s ease-in-out infinite;
+}
