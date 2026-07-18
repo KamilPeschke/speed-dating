@@ -1,6 +1,8 @@
-package com.pairs.speed_dating.user;
+package com.pairs.speed_dating.user.repository;
 
 import com.pairs.speed_dating.discovery.UserProfileWithoutDistance;
+import com.pairs.speed_dating.user.UserStatus;
+import com.pairs.speed_dating.user.domain.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,4 +1,4 @@
-package com.pairs.speed_dating.redis;
+package com.pairs.speed_dating.core.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

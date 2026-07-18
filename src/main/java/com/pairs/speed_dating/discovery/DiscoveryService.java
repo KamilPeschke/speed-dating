@@ -1,12 +1,9 @@
 package com.pairs.speed_dating.discovery;
 
-import com.pairs.speed_dating.redis.FiltersAndBasicData;
-import com.pairs.speed_dating.redis.GeoQueryResult;
-import com.pairs.speed_dating.redis.LocalizationWithRadius;
-import com.pairs.speed_dating.redis.RedisService;
+import com.pairs.speed_dating.user.domain.LocalizationWithRadius;
 import com.pairs.speed_dating.user.Filters;
 import com.pairs.speed_dating.user.Gender;
-import com.pairs.speed_dating.user.UserRepository;
+import com.pairs.speed_dating.user.repository.UserRepository;
 import com.pairs.speed_dating.user.UserStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,6 +1,6 @@
 package com.pairs.speed_dating.discovery;
 
-import com.pairs.speed_dating.user.UserService;
+import com.pairs.speed_dating.user.service.UserService;
 import com.pairs.speed_dating.user.response.GetUserAgeAndGenderResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

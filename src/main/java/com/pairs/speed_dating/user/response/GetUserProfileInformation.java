@@ -1,4 +1,11 @@
 package com.pairs.speed_dating.user.response;
 
-public class GetUserProfileInformation {
+import com.pairs.speed_dating.user.Gender;
+
+public record GetUserProfileInformation(
+  Integer age,
+  Gender gender,
+  Gender interestedIn,
+  String name
+) {
 }

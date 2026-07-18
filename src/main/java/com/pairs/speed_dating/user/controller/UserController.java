@@ -1,7 +1,11 @@
-package com.pairs.speed_dating.user;
+package com.pairs.speed_dating.user.controller;
 
+import com.pairs.speed_dating.user.UpdateUserStatus;
 import com.pairs.speed_dating.user.dto.*;
 import com.pairs.speed_dating.user.response.CreateUserResponse;
+import com.pairs.speed_dating.user.response.GetUserAgeAndGenderResponse;
+import com.pairs.speed_dating.user.response.GetUserProfileInformation;
+import com.pairs.speed_dating.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,6 +30,12 @@ public class UserController {
   public ResponseEntity<UUID> loginUser(@Valid @RequestBody LoginDto credentials) {
     return ResponseEntity.status(HttpStatus.OK).body(userService.login(credentials));
   }
+
+  @GetMapping("/info")
+  public ResponseEntity<GetUserProfileInformation> getUserProfileInformation(UUID userId){
+    return ResponseEntity.status(HttpStatus.OK).body(userService.getUserProfileInformation(userId));
+  }
+
   //TODO take userId from token JWT/handshake
   @PostMapping("/{id}/status-available")
   public ResponseEntity<UpdateUserStatus> updateUserStatusToAvailable(
