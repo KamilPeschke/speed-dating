@@ -1,6 +1,6 @@
 package com.pairs.speed_dating;
 
-import com.pairs.speed_dating.redis.RedisProperties;
+import com.pairs.speed_dating.core.config.RedisProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

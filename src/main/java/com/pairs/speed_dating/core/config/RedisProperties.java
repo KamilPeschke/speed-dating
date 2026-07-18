@@ -1,4 +1,4 @@
-package com.pairs.speed_dating.redis;
+package com.pairs.speed_dating.core.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

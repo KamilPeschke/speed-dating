@@ -1,14 +1,20 @@
-package com.pairs.speed_dating.user;
+package com.pairs.speed_dating.user.service;
 
 import com.pairs.speed_dating.core.exception.UserAlreadyExistsException;
 import com.pairs.speed_dating.core.exception.UserNotFoundException;
 import com.pairs.speed_dating.event.DomainEventPublisher;
 import com.pairs.speed_dating.event.UserChangeStatusToAvailableEvent;
 import com.pairs.speed_dating.event.UserChangeStatusToUnavailableEvent;
-import com.pairs.speed_dating.redis.LocalizationWithRadius;
+import com.pairs.speed_dating.user.domain.LocalizationWithRadius;
+import com.pairs.speed_dating.user.Filters;
+import com.pairs.speed_dating.user.UpdateUserStatus;
+import com.pairs.speed_dating.user.UserStatus;
+import com.pairs.speed_dating.user.domain.UserEntity;
 import com.pairs.speed_dating.user.dto.*;
+import com.pairs.speed_dating.user.repository.UserRepository;
 import com.pairs.speed_dating.user.response.CreateUserResponse;
 import com.pairs.speed_dating.user.response.GetUserAgeAndGenderResponse;
+import com.pairs.speed_dating.user.response.GetUserProfileInformation;
 import com.pairs.speed_dating.user.response.UpdateUserStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +69,17 @@ public class UserService {
     return new GetUserAgeAndGenderResponse(
       userEntity.getAge(),
       userEntity.getGender()
+    );
+  }
+
+  public GetUserProfileInformation getUserProfileInformation(UUID userId) {
+    UserEntity user =  userRepository.findById(userId).orElseThrow(()->
+      new UserNotFoundException(userId));
+    return new GetUserProfileInformation(
+      user.getAge(),
+      user.getGender(),
+      user.getInterestedIn(),
+      user.getName()
     );
   }
 

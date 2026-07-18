@@ -1,4 +1,4 @@
-package com.pairs.speed_dating.redis;
+package com.pairs.speed_dating.discovery;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
