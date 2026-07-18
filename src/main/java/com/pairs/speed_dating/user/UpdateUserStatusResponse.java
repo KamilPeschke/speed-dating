@@ -1,7 +1,7 @@
-package com.pairs.speed_dating.user.response;
+package com.pairs.speed_dating.user;
 
-import com.pairs.speed_dating.user.Gender;
-import com.pairs.speed_dating.user.UserStatus;
+import com.pairs.speed_dating.user.domain.Gender;
+import com.pairs.speed_dating.user.domain.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

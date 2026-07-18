@@ -1,7 +1,7 @@
 package com.pairs.speed_dating.discovery;
 
-import com.pairs.speed_dating.event.UserChangeStatusToAvailableEvent;
-import com.pairs.speed_dating.event.UserChangeStatusToUnavailableEvent;
+import com.pairs.speed_dating.user.UserChangeStatusToAvailableEvent;
+import com.pairs.speed_dating.user.UserChangeStatusToUnavailableEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -21,27 +21,27 @@ public class DiscoveryEventHandler {
   @EventListener
   public void handleUserStatusChangeToAvailable(UserChangeStatusToAvailableEvent event){
     discoveryService.addUserToPoolAfterStatusChanges(
-      event.output().getUserId(),
-      event.output().getUserStatus(),
+      event.output().userId(),
+      event.output().userStatus(),
       event.localization(),
       event.filters(),
-      event.output().getAge(),
-      event.output().getGender()
+      event.output().age(),
+      event.output().gender()
     );
 
     List<UserProfile> users = discoveryService.handleFilterByAgeAndGender(
-      event.output().getUserId(),
+      event.output().userId(),
       //TODO we can change this to different record using MapStruct
       new FilterAgeAndGenderRequest(
-        event.output().getAge(),
-        event.output().getGender(),
+        event.output().age(),
+        event.output().gender(),
         event.localization(),
         event.filters()
       )
     );
 
     simpMessagingTemplate.convertAndSendToUser(
-      event.output().getUserId().toString(),
+      event.output().userId().toString(),
       HANDLE_AVAILABLE_USER_STATUS_CHANGE_EVENT_PATH,
       users
     );

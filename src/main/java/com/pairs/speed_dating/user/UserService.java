@@ -1,21 +1,15 @@
-package com.pairs.speed_dating.user.service;
+package com.pairs.speed_dating.user;
 
 import com.pairs.speed_dating.core.exception.UserAlreadyExistsException;
 import com.pairs.speed_dating.core.exception.UserNotFoundException;
-import com.pairs.speed_dating.event.DomainEventPublisher;
-import com.pairs.speed_dating.event.UserChangeStatusToAvailableEvent;
-import com.pairs.speed_dating.event.UserChangeStatusToUnavailableEvent;
-import com.pairs.speed_dating.user.domain.LocalizationWithRadius;
-import com.pairs.speed_dating.user.Filters;
-import com.pairs.speed_dating.user.UpdateUserStatus;
-import com.pairs.speed_dating.user.UserStatus;
+import com.pairs.speed_dating.core.event.DomainEventPublisher;
+import com.pairs.speed_dating.user.domain.UserStatus;
 import com.pairs.speed_dating.user.domain.UserEntity;
 import com.pairs.speed_dating.user.dto.*;
 import com.pairs.speed_dating.user.repository.UserRepository;
-import com.pairs.speed_dating.user.response.CreateUserResponse;
-import com.pairs.speed_dating.user.response.GetUserAgeAndGenderResponse;
-import com.pairs.speed_dating.user.response.GetUserProfileInformation;
-import com.pairs.speed_dating.user.response.UpdateUserStatusResponse;
+import com.pairs.speed_dating.user.dto.response.CreateUserResponse;
+import com.pairs.speed_dating.user.dto.response.GetUserAgeAndGenderResponse;
+import com.pairs.speed_dating.user.dto.response.GetUserProfileInformation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -33,7 +29,6 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final DomainEventPublisher domainEventPublisher;
 
-  //TODO [DTO IN SERVICE LAYER] !
   @Transactional
   public CreateUserResponse createUser(CreateUserDto user) {
 
@@ -83,6 +78,10 @@ public class UserService {
     );
   }
 
+ public List<UserProfileWithoutDistance> getUserProfilesWithoutDistance(Set<UUID> nearbyUsersId) {
+   return userRepository.findByIdInAndDeletedAtIsNullAndStatus(nearbyUsersId, UserStatus.AVAILABLE);
+ }
+
   @Transactional
   public UpdateUserStatus updateUserStatusToAvailable(
     UUID userId,
@@ -93,7 +92,7 @@ public class UserService {
 
     user.changeStatus(UserStatus.AVAILABLE);
 
-    UpdateUserStatusResponse response = new UpdateUserStatusResponse(
+    UserChangeStatusTo response = new UserChangeStatusTo(
       user.getId(),
       user.getStatus(),
       user.getAge(),

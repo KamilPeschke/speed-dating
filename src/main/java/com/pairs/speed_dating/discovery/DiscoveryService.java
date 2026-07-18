@@ -1,10 +1,12 @@
 package com.pairs.speed_dating.discovery;
 
-import com.pairs.speed_dating.user.domain.LocalizationWithRadius;
+import com.pairs.speed_dating.user.UserProfileWithoutDistance;
+import com.pairs.speed_dating.user.LocalizationWithRadius;
 import com.pairs.speed_dating.user.Filters;
-import com.pairs.speed_dating.user.Gender;
+import com.pairs.speed_dating.user.UserService;
+import com.pairs.speed_dating.user.domain.Gender;
 import com.pairs.speed_dating.user.repository.UserRepository;
-import com.pairs.speed_dating.user.UserStatus;
+import com.pairs.speed_dating.user.domain.UserStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,7 +22,7 @@ import java.util.stream.Collectors;
 @Service
 public class DiscoveryService {
   private final RedisService redisService;
-  private final UserRepository userRepository;
+  private final UserService userService;
 
   public List<UserProfile> handleFilterByAgeAndGender(
     UUID userId,
@@ -53,7 +55,7 @@ public class DiscoveryService {
     }
 
     //Getting a full profile of our users with pictures
-    List<UserProfileWithoutDistance> userProfileWithoutDistance = userRepository.findByIdInAndDeletedAtIsNullAndStatus(nearbyUsersId, UserStatus.AVAILABLE);
+    List<UserProfileWithoutDistance> userProfileWithoutDistance = userService.getUserProfilesWithoutDistance(nearbyUsersId);
 
     if(userProfileWithoutDistance.isEmpty()){
       log.warn("[WARN] Can't find any profiles with provided ID's, returning empty list instead");

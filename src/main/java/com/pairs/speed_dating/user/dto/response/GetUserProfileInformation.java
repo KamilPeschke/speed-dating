@@ -1,6 +1,6 @@
-package com.pairs.speed_dating.user.response;
+package com.pairs.speed_dating.user.dto.response;
 
-import com.pairs.speed_dating.user.Gender;
+import com.pairs.speed_dating.user.domain.Gender;
 
 public record GetUserProfileInformation(
   Integer age,

@@ -1,6 +1,6 @@
 package com.pairs.speed_dating.user.dto;
 
-import com.pairs.speed_dating.user.Gender;
+import com.pairs.speed_dating.user.domain.Gender;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

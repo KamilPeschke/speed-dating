@@ -1,4 +1,4 @@
-package com.pairs.speed_dating.event;
+package com.pairs.speed_dating.core.event;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
