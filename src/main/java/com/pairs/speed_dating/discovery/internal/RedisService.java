@@ -1,8 +1,6 @@
-package com.pairs.speed_dating.discovery;
+package com.pairs.speed_dating.discovery.internal;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pairs.speed_dating.user.LocalizationWithRadius;
-import com.pairs.speed_dating.user.Filters;
-import com.pairs.speed_dating.user.domain.Gender;
+import com.pairs.speed_dating.user.api.Gender;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;

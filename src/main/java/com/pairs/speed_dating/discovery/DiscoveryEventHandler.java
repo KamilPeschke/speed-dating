@@ -1,7 +1,14 @@
 package com.pairs.speed_dating.discovery;
 
-import com.pairs.speed_dating.user.UserChangeStatusToAvailableEvent;
-import com.pairs.speed_dating.user.UserChangeStatusToUnavailableEvent;
+import com.pairs.speed_dating.discovery.dto.FilterAgeAndGenderRequest;
+import com.pairs.speed_dating.discovery.dto.UserProfile;
+import com.pairs.speed_dating.discovery.internal.DiscoveryService;
+import com.pairs.speed_dating.discovery.internal.Filters;
+import com.pairs.speed_dating.discovery.internal.LocalizationWithRadius;
+import com.pairs.speed_dating.user.event.SearchArea;
+import com.pairs.speed_dating.user.event.SearchPreferences;
+import com.pairs.speed_dating.user.event.UserChangeStatusToAvailableEvent;
+import com.pairs.speed_dating.user.event.UserChangeStatusToUnavailableEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -20,23 +27,24 @@ public class DiscoveryEventHandler {
 
   @EventListener
   public void handleUserStatusChangeToAvailable(UserChangeStatusToAvailableEvent event){
+    LocalizationWithRadius localization = toLocalization(event.searchArea());
+    Filters filters = toFilters(event.searchPreferences());
+
     discoveryService.addUserToPoolAfterStatusChanges(
       event.output().userId(),
-      event.output().userStatus(),
-      event.localization(),
-      event.filters(),
+      localization,
+      filters,
       event.output().age(),
       event.output().gender()
     );
 
     List<UserProfile> users = discoveryService.handleFilterByAgeAndGender(
       event.output().userId(),
-      //TODO we can change this to different record using MapStruct
       new FilterAgeAndGenderRequest(
         event.output().age(),
         event.output().gender(),
-        event.localization(),
-        event.filters()
+        localization,
+        filters
       )
     );
 
@@ -50,8 +58,23 @@ public class DiscoveryEventHandler {
   @EventListener
   public void handleUserStatusChangeToUnavailable(UserChangeStatusToUnavailableEvent event){
     discoveryService.removeUserFromPoolAfterStatusChanges(
-      event.userID(),
-      event.userStatus()
+      event.userID()
+    );
+  }
+
+  private LocalizationWithRadius toLocalization(SearchArea searchArea) {
+    return new LocalizationWithRadius(
+      searchArea.lat(),
+      searchArea.lon(),
+      searchArea.radiusKm()
+    );
+  }
+
+  private Filters toFilters(SearchPreferences searchPreferences) {
+    return new Filters(
+      searchPreferences.ageFrom(),
+      searchPreferences.ageTo(),
+      searchPreferences.gender()
     );
   }
 }
