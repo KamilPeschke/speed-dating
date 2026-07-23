@@ -1,5 +1,6 @@
-package com.pairs.speed_dating.user;
-import com.pairs.speed_dating.user.domain.UserStatus;
+package com.pairs.speed_dating.user.dto.response;
+
+import com.pairs.speed_dating.user.api.UserStatus;
 
 import java.util.UUID;
 

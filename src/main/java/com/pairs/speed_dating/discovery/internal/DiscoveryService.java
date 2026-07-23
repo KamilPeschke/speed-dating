@@ -1,12 +1,11 @@
-package com.pairs.speed_dating.discovery;
+package com.pairs.speed_dating.discovery.internal;
 
-import com.pairs.speed_dating.user.UserProfileWithoutDistance;
-import com.pairs.speed_dating.user.LocalizationWithRadius;
-import com.pairs.speed_dating.user.Filters;
-import com.pairs.speed_dating.user.UserService;
-import com.pairs.speed_dating.user.domain.Gender;
-import com.pairs.speed_dating.user.repository.UserRepository;
-import com.pairs.speed_dating.user.domain.UserStatus;
+import com.pairs.speed_dating.discovery.dto.FilterAgeAndGenderRequest;
+import com.pairs.speed_dating.discovery.dto.UserProfile;
+import com.pairs.speed_dating.user.api.UserAgeAndGender;
+import com.pairs.speed_dating.user.api.UserProfileWithoutDistance;
+import com.pairs.speed_dating.user.api.UserProfileProvider;
+import com.pairs.speed_dating.user.api.Gender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,21 @@ import java.util.stream.Collectors;
 @Service
 public class DiscoveryService {
   private final RedisService redisService;
-  private final UserService userService;
+  private final UserProfileProvider userProfileProvider;
+
+  public List<UserProfile> refresh(UUID userId, FilterAgeAndGenderRequest request) {
+    UserAgeAndGender userInformation = userProfileProvider.getUserAgeAndGender(userId);
+
+    return handleFilterByAgeAndGender(
+      userId,
+      new FilterAgeAndGenderRequest(
+        userInformation.age(),
+        userInformation.gender(),
+        request.localization(),
+        request.filters()
+      )
+    );
+  }
 
   public List<UserProfile> handleFilterByAgeAndGender(
     UUID userId,
@@ -35,7 +48,9 @@ public class DiscoveryService {
     }
 
     List<GeoQueryResult> nearbyUsers = redisService.findNearbyUsers(userFilters.localization());
-    List<UUID> usersIdForFiltering = nearbyUsers.stream().map(GeoQueryResult::getUserId).toList();
+    List<UUID> usersIdForFiltering = nearbyUsers.stream()
+      .map(GeoQueryResult::getUserId)
+      .filter(id -> !id.equals(userId)).toList();
     Map<UUID, FiltersAndBasicData> profilesWhereUserMatchCriteria = checkIfUserMatchOtherUsersCriteria(
       usersIdForFiltering,
       userFilters.userGender(),
@@ -55,7 +70,7 @@ public class DiscoveryService {
     }
 
     //Getting a full profile of our users with pictures
-    List<UserProfileWithoutDistance> userProfileWithoutDistance = userService.getUserProfilesWithoutDistance(nearbyUsersId);
+    List<UserProfileWithoutDistance> userProfileWithoutDistance = userProfileProvider.getUserProfilesWithoutDistance(nearbyUsersId);
 
     if(userProfileWithoutDistance.isEmpty()){
       log.warn("[WARN] Can't find any profiles with provided ID's, returning empty list instead");
@@ -121,16 +136,11 @@ public class DiscoveryService {
 
   public void addUserToPoolAfterStatusChanges(
     UUID userId,
-    UserStatus status,
     LocalizationWithRadius localization,
     Filters filters,
     int currentUserAge,
     Gender currentUserGender
   ){
-    if(status == null){
-      log.error("Status cannot be null");
-      throw new IllegalArgumentException("Status cannot be null");
-    }
       redisService.addUserToPool(
         userId,
         localization.lon(),
@@ -144,11 +154,10 @@ public class DiscoveryService {
   }
 
   public void removeUserFromPoolAfterStatusChanges(
-    UUID userId,
-    UserStatus userStatus
+    UUID userId
   ){
-    if(userStatus == null || userId == null){
-      log.error("Status or userId cannot be null");
+    if( userId == null){
+      log.error("UserId cannot be null");
       throw new IllegalArgumentException("Invalid data");
     }
     redisService.removeUserFromAvailablePool(userId);

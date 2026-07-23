@@ -1,4 +1,4 @@
-package com.pairs.speed_dating.user;
+package com.pairs.speed_dating.discovery.internal;
 
 public record LocalizationWithRadius(
   double lat,

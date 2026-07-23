@@ -1,7 +1,7 @@
-package com.pairs.speed_dating.user;
+package com.pairs.speed_dating.user.event;
 
 import com.pairs.speed_dating.core.event.DomainEvent;
-import com.pairs.speed_dating.user.domain.UserStatus;
+import com.pairs.speed_dating.user.api.UserStatus;
 
 import java.time.Instant;
 import java.util.UUID;

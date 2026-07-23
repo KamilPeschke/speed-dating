@@ -1,7 +1,7 @@
 package com.pairs.speed_dating.user.dto;
 
 import jakarta.validation.constraints.*;
-import com.pairs.speed_dating.user.domain.Gender;
+import com.pairs.speed_dating.user.api.Gender;
 
 public record CreateUserDto(
   @NotBlank(message = "Email should not be empty")

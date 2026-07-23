@@ -1,14 +1,22 @@
-package com.pairs.speed_dating.user;
+package com.pairs.speed_dating.user.internal;
 
 import com.pairs.speed_dating.core.exception.UserAlreadyExistsException;
 import com.pairs.speed_dating.core.exception.UserNotFoundException;
 import com.pairs.speed_dating.core.event.DomainEventPublisher;
-import com.pairs.speed_dating.user.domain.UserStatus;
+import com.pairs.speed_dating.user.api.UserAgeAndGender;
+import com.pairs.speed_dating.user.api.UserChangeStatusTo;
+import com.pairs.speed_dating.user.api.UserProfileProvider;
+import com.pairs.speed_dating.user.api.UserProfileWithoutDistance;
+import com.pairs.speed_dating.user.dto.response.UpdateUserStatus;
 import com.pairs.speed_dating.user.domain.UserEntity;
+import com.pairs.speed_dating.user.api.UserStatus;
 import com.pairs.speed_dating.user.dto.*;
+import com.pairs.speed_dating.user.event.SearchArea;
+import com.pairs.speed_dating.user.event.SearchPreferences;
+import com.pairs.speed_dating.user.event.UserChangeStatusToAvailableEvent;
+import com.pairs.speed_dating.user.event.UserChangeStatusToUnavailableEvent;
 import com.pairs.speed_dating.user.repository.UserRepository;
 import com.pairs.speed_dating.user.dto.response.CreateUserResponse;
-import com.pairs.speed_dating.user.dto.response.GetUserAgeAndGenderResponse;
 import com.pairs.speed_dating.user.dto.response.GetUserProfileInformation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +32,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserService implements UserProfileProvider {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final DomainEventPublisher domainEventPublisher;
@@ -57,11 +65,12 @@ public class UserService {
     );
   }
 
+  @Override
   @Transactional(readOnly = true)
-  public GetUserAgeAndGenderResponse getUserAgeAndGender(UUID userId) {
+  public UserAgeAndGender getUserAgeAndGender(UUID userId) {
     UserEntity userEntity = userRepository.findById(userId).orElseThrow(()->
       new UserNotFoundException(userId));
-    return new GetUserAgeAndGenderResponse(
+    return new UserAgeAndGender(
       userEntity.getAge(),
       userEntity.getGender()
     );
@@ -78,9 +87,10 @@ public class UserService {
     );
   }
 
- public List<UserProfileWithoutDistance> getUserProfilesWithoutDistance(Set<UUID> nearbyUsersId) {
-   return userRepository.findByIdInAndDeletedAtIsNullAndStatus(nearbyUsersId, UserStatus.AVAILABLE);
- }
+  @Override
+  public List<UserProfileWithoutDistance> getUserProfilesWithoutDistance(Set<UUID> nearbyUsersId) {
+    return userRepository.findByIdInAndDeletedAtIsNullAndStatus(nearbyUsersId, UserStatus.AVAILABLE);
+  }
 
   @Transactional
   public UpdateUserStatus updateUserStatusToAvailable(
@@ -100,14 +110,13 @@ public class UserService {
     );
     log.info("Publishing update user status event for user {} and status {}" , userId, user.getStatus());
 
-    //TODO change DTO mapping to MapStruct
-    LocalizationWithRadius localization = new LocalizationWithRadius(
+    SearchArea searchArea = new SearchArea(
       updateUserStatus.localization().lat(),
       updateUserStatus.localization().lon(),
       updateUserStatus.localization().radiusKm()
     );
 
-    Filters filters = new Filters(
+    SearchPreferences searchPreferences = new SearchPreferences(
       updateUserStatus.filters().ageFrom(),
       updateUserStatus.filters().ageTo(),
       updateUserStatus.filters().gender()
@@ -116,8 +125,8 @@ public class UserService {
     domainEventPublisher.publish(
       new UserChangeStatusToAvailableEvent(
         response,
-        localization,
-        filters
+        searchArea,
+        searchPreferences
       )
     );
 

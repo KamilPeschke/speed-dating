@@ -1,7 +1,8 @@
 package com.pairs.speed_dating.discovery;
 
-import com.pairs.speed_dating.user.UserService;
-import com.pairs.speed_dating.user.dto.response.GetUserAgeAndGenderResponse;
+import com.pairs.speed_dating.discovery.dto.FilterAgeAndGenderRequest;
+import com.pairs.speed_dating.discovery.dto.UserProfile;
+import com.pairs.speed_dating.discovery.internal.DiscoveryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,22 +16,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DiscoveryController {
   private final DiscoveryService discoveryService;
-  private final UserService userService;
 
   @PostMapping("/refresh/{userId}")
   public ResponseEntity<List<UserProfile>> refresh(
     @PathVariable("userId") UUID userId,
     @RequestBody FilterAgeAndGenderRequest request
   ){
-    GetUserAgeAndGenderResponse userInformation = userService.getUserAgeAndGender(userId);
-    return ResponseEntity.status(HttpStatus.OK).body(discoveryService.handleFilterByAgeAndGender(
-      userId,
-      new FilterAgeAndGenderRequest(
-        userInformation.age(),
-        userInformation.gender(),
-        request.localization(),
-        request.filters()
-      )
-    ));
+    return ResponseEntity.status(HttpStatus.OK).body(discoveryService.refresh(userId, request));
   }
 }

@@ -1,4 +1,4 @@
-package com.pairs.speed_dating.user.domain;
+package com.pairs.speed_dating.user.api;
 
 public enum UserStatus {
   AVAILABLE,

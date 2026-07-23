@@ -1,5 +1,7 @@
 package com.pairs.speed_dating.user.domain;
 
+import com.pairs.speed_dating.user.api.Gender;
+import com.pairs.speed_dating.user.api.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,10 +1,10 @@
 package com.pairs.speed_dating.user.controller;
 
-import com.pairs.speed_dating.user.UpdateUserStatus;
+import com.pairs.speed_dating.user.dto.response.UpdateUserStatus;
 import com.pairs.speed_dating.user.dto.*;
 import com.pairs.speed_dating.user.dto.response.CreateUserResponse;
 import com.pairs.speed_dating.user.dto.response.GetUserProfileInformation;
-import com.pairs.speed_dating.user.UserService;
+import com.pairs.speed_dating.user.internal.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
