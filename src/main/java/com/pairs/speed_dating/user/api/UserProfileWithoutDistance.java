@@ -1,6 +1,4 @@
-package com.pairs.speed_dating.user;
-
-import com.pairs.speed_dating.user.domain.Gender;
+package com.pairs.speed_dating.user.api;
 
 import java.util.Collections;
 import java.util.List;
