@@ -66,7 +66,7 @@ public class UserEntity {
   private Date deletedAt;
 
   @Builder
-  public UserEntity(String email, String password, String name,  String surname, int age, Gender gender, Gender interestedIn, Date createdAt) {
+  public UserEntity(String email, String password, String name, String surname, int age, Gender gender, Gender interestedIn, Date createdAt) {
     this.email = email;
     this.password = password;
     this.name = name;
@@ -76,6 +76,7 @@ public class UserEntity {
     this.gender = gender;
     this.interestedIn = interestedIn;
     this.createdAt = createdAt;
+    this.role = Role.USER;
   }
 
   public void changeStatus(UserStatus newStatus) {

@@ -1,5 +1,6 @@
 package com.pairs.speed_dating.user.internal;
 
+import com.pairs.speed_dating.core.event.DomainEventPublisher;
 import com.pairs.speed_dating.core.exception.UserNotFoundException;
 import com.pairs.speed_dating.user.api.*;
 import com.pairs.speed_dating.user.auth.AuthenticatedUserPrincipal;
@@ -28,7 +29,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService implements UserProfileProvider {
   private final UserRepository userRepository;
-  private final UserAvailabilityPool userAvailabilityPool;
+  private final DomainEventPublisher domainEventPublisher;
 
   @Override
   @Transactional(readOnly = true)
@@ -87,7 +88,7 @@ public class UserService implements UserProfileProvider {
       updateUserStatus.filters().gender()
     );
 
-    userAvailabilityPool.add(new UserChangeStatusToAvailable(
+    domainEventPublisher.publish(new UserChangeStatusToAvailable(
       response,
       searchArea,
       searchPreferences
@@ -105,7 +106,7 @@ public class UserService implements UserProfileProvider {
 
     user.changeStatus(UserStatus.UNAVAILABLE);
 
-    userAvailabilityPool.remove(
+    domainEventPublisher.publish(
       new UserChangeStatusToUnavailable(
         userId,
         user.getStatus()

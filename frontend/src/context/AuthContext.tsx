@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, setAccessToken } from '../lib/api'
 import type { CreateUserRequest, Gender } from '../lib/types'
 
@@ -41,20 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Access token żyje tylko w pamięci — po odświeżeniu strony trzeba go odzyskać
   // z httpOnly cookie refresh_token, zanim jakiekolwiek chronione żądanie zadziała.
+  //
+  // bootstrapped chroni przed podwójnym wywołaniem /user/refresh pod StrictMode
+  // (dev odpala efekty dwukrotnie) — backend rotuje refresh token jednorazowo
+  // i przy wykryciu powtórnego użycia unieważnia WSZYSTKIE tokeny usera, więc
+  // drugie, "widmowe" wywołanie potrafiło ubić sesję zaraz po jej odzyskaniu.
+  const bootstrapped = useRef(false)
   useEffect(() => {
-    if (!session) return
-    let cancelled = false
+    if (!session || bootstrapped.current) return
+    bootstrapped.current = true
     api
       .refresh()
-      .then((res) => {
-        if (!cancelled) setAccessToken(res.token)
-      })
-      .catch(() => {
-        if (!cancelled) persist(null)
-      })
-    return () => {
-      cancelled = true
-    }
+      .then((res) => setAccessToken(res.token))
+      .catch(() => persist(null))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
