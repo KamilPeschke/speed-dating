@@ -6,7 +6,7 @@ import com.pairs.speed_dating.user.api.UserChangeStatusTo;
 import java.time.Instant;
 import java.util.UUID;
 
-public record UserChangeStatusToAvailableEvent(
+public record UserChangeStatusToAvailable(
   UUID eventId,
   Instant occurredOn,
   UserChangeStatusTo output,
@@ -14,7 +14,7 @@ public record UserChangeStatusToAvailableEvent(
   SearchPreferences searchPreferences
 ) implements DomainEvent {
 
-  public UserChangeStatusToAvailableEvent(UserChangeStatusTo output, SearchArea searchArea, SearchPreferences searchPreferences) {
+  public UserChangeStatusToAvailable(UserChangeStatusTo output, SearchArea searchArea, SearchPreferences searchPreferences) {
     this(UUID.randomUUID(), Instant.now(), output, searchArea, searchPreferences);
   }
 }

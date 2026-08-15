@@ -1,5 +1,6 @@
 package com.pairs.speed_dating.user.domain;
 
+import com.pairs.speed_dating.user.Role;
 import com.pairs.speed_dating.user.api.Gender;
 import com.pairs.speed_dating.user.api.UserStatus;
 import jakarta.persistence.*;
@@ -49,9 +50,11 @@ public class UserEntity {
   @Column()
   private String profilePhotoLink;
 
-//  @JdbcTypeCode(SqlTypes.JSON)
   @Column()
   private List<String> photos;
+
+  @Column
+  private Role role;
 
   @Column(nullable = false)
   private Date createdAt;
@@ -77,5 +80,9 @@ public class UserEntity {
 
   public void changeStatus(UserStatus newStatus) {
     this.status = newStatus;
+  }
+
+  public void setNewRoleForUser(Role newRole) {
+    this.role = newRole;
   }
 }

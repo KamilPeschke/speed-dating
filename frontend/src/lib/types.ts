@@ -47,6 +47,9 @@ export interface CreateUserRequest {
 export interface CreateUserResponse {
   email: string
   uuid: string
+  token: string
+  tokenType: string
+  expiresInMs: number
 }
 
 /** user/UpdateUserStatus */

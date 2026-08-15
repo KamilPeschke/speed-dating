@@ -5,60 +5,62 @@ import com.pairs.speed_dating.discovery.dto.UserProfile;
 import com.pairs.speed_dating.discovery.internal.DiscoveryService;
 import com.pairs.speed_dating.discovery.internal.Filters;
 import com.pairs.speed_dating.discovery.internal.LocalizationWithRadius;
+import com.pairs.speed_dating.user.api.UserAvailabilityPool;
 import com.pairs.speed_dating.user.event.SearchArea;
 import com.pairs.speed_dating.user.event.SearchPreferences;
-import com.pairs.speed_dating.user.event.UserChangeStatusToAvailableEvent;
-import com.pairs.speed_dating.user.event.UserChangeStatusToUnavailableEvent;
-import lombok.RequiredArgsConstructor;
+import com.pairs.speed_dating.user.event.UserChangeStatusToAvailable;
+import com.pairs.speed_dating.user.event.UserChangeStatusToUnavailable;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Slf4j
-@RequiredArgsConstructor
 @Component
-public class DiscoveryEventHandler {
+public class RedisAvailabilityPool implements UserAvailabilityPool {
   private final DiscoveryService discoveryService;
   private final SimpMessagingTemplate simpMessagingTemplate;
   private static final String HANDLE_AVAILABLE_USER_STATUS_CHANGE_EVENT_PATH = "queue/userStatusChange";
 
-  @EventListener
-  public void handleUserStatusChangeToAvailable(UserChangeStatusToAvailableEvent event){
-    LocalizationWithRadius localization = toLocalization(event.searchArea());
-    Filters filters = toFilters(event.searchPreferences());
+  public RedisAvailabilityPool(@Lazy DiscoveryService discoveryService, SimpMessagingTemplate simpMessagingTemplate){
+    this.discoveryService = discoveryService;
+    this.simpMessagingTemplate = simpMessagingTemplate;
+  }
+
+  public void add(UserChangeStatusToAvailable userStatusChange){
+    LocalizationWithRadius localization = toLocalization(userStatusChange.searchArea());
+    Filters filters = toFilters(userStatusChange.searchPreferences());
 
     discoveryService.addUserToPoolAfterStatusChanges(
-      event.output().userId(),
+      userStatusChange.output().userId(),
       localization,
       filters,
-      event.output().age(),
-      event.output().gender()
+      userStatusChange.output().age(),
+      userStatusChange.output().gender()
     );
 
     List<UserProfile> users = discoveryService.handleFilterByAgeAndGender(
-      event.output().userId(),
+      userStatusChange.output().userId(),
       new FilterAgeAndGenderRequest(
-        event.output().age(),
-        event.output().gender(),
+        userStatusChange.output().age(),
+        userStatusChange.output().gender(),
         localization,
         filters
       )
     );
 
     simpMessagingTemplate.convertAndSendToUser(
-      event.output().userId().toString(),
+      userStatusChange.output().userId().toString(),
       HANDLE_AVAILABLE_USER_STATUS_CHANGE_EVENT_PATH,
       users
     );
   }
 
-  @EventListener
-  public void handleUserStatusChangeToUnavailable(UserChangeStatusToUnavailableEvent event){
+  public void remove(UserChangeStatusToUnavailable userChangeStatusToUnavailable){
     discoveryService.removeUserFromPoolAfterStatusChanges(
-      event.userID()
+      userChangeStatusToUnavailable.userID()
     );
   }
 

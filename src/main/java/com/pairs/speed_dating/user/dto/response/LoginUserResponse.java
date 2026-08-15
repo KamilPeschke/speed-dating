@@ -2,7 +2,7 @@ package com.pairs.speed_dating.user.dto.response;
 
 import java.util.UUID;
 
-public record CreateUserResponse(
+public record LoginUserResponse(
   String email,
   UUID uuid,
   String token,
