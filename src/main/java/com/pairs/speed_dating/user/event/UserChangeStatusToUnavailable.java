@@ -6,13 +6,13 @@ import com.pairs.speed_dating.user.api.UserStatus;
 import java.time.Instant;
 import java.util.UUID;
 
-public record UserChangeStatusToUnavailableEvent(
+public record UserChangeStatusToUnavailable(
   UUID eventId,
   Instant occurredOn,
   UUID userID,
   UserStatus userStatus
 )implements DomainEvent {
-  public UserChangeStatusToUnavailableEvent(UUID userID, UserStatus userStatus){
+  public UserChangeStatusToUnavailable(UUID userID, UserStatus userStatus){
     this(UUID.randomUUID(), Instant.now(), userID, userStatus);
   }
 }

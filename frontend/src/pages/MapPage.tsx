@@ -116,7 +116,7 @@ export function MapPage() {
     setFilterModalOpen(false)
     setPending(true)
     try {
-      await api.setAvailable(session.userId, localization, filters)
+      await api.setAvailable(localization, filters)
       wsDisconnect.current = connectStatusFeed(setResults)
       setSearching(true)
       await refresh(true)
@@ -131,7 +131,7 @@ export function MapPage() {
     if (!session) return
     setPending(true)
     try {
-      await api.setUnavailable(session.userId)
+      await api.setUnavailable()
       wsDisconnect.current?.()
       wsDisconnect.current = null
       setSearching(false)

@@ -1,30 +1,24 @@
 package com.pairs.speed_dating.user.internal;
 
-import com.pairs.speed_dating.core.exception.UserAlreadyExistsException;
 import com.pairs.speed_dating.core.exception.UserNotFoundException;
-import com.pairs.speed_dating.core.event.DomainEventPublisher;
-import com.pairs.speed_dating.user.api.UserAgeAndGender;
-import com.pairs.speed_dating.user.api.UserChangeStatusTo;
-import com.pairs.speed_dating.user.api.UserProfileProvider;
-import com.pairs.speed_dating.user.api.UserProfileWithoutDistance;
+import com.pairs.speed_dating.user.api.*;
+import com.pairs.speed_dating.user.auth.AuthenticatedUserPrincipal;
 import com.pairs.speed_dating.user.dto.response.UpdateUserStatus;
 import com.pairs.speed_dating.user.domain.UserEntity;
-import com.pairs.speed_dating.user.api.UserStatus;
 import com.pairs.speed_dating.user.dto.*;
 import com.pairs.speed_dating.user.event.SearchArea;
 import com.pairs.speed_dating.user.event.SearchPreferences;
-import com.pairs.speed_dating.user.event.UserChangeStatusToAvailableEvent;
-import com.pairs.speed_dating.user.event.UserChangeStatusToUnavailableEvent;
+import com.pairs.speed_dating.user.event.UserChangeStatusToAvailable;
+import com.pairs.speed_dating.user.event.UserChangeStatusToUnavailable;
 import com.pairs.speed_dating.user.repository.UserRepository;
-import com.pairs.speed_dating.user.dto.response.CreateUserResponse;
 import com.pairs.speed_dating.user.dto.response.GetUserProfileInformation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -34,36 +28,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService implements UserProfileProvider {
   private final UserRepository userRepository;
-  private final PasswordEncoder passwordEncoder;
-  private final DomainEventPublisher domainEventPublisher;
-
-  @Transactional
-  public CreateUserResponse createUser(CreateUserDto user) {
-
-    if(userRepository.existsByEmail(user.email())){
-      throw new UserAlreadyExistsException(user.email());
-    }
-
-    UserEntity userEntity = UserEntity.builder()
-      .email(user.email())
-      .password(passwordEncoder.encode(user.password()))
-      .name(user.name())
-      .surname(user.surname())
-      .age(user.age())
-      .gender(user.gender())
-      .interestedIn(user.interestedIn())
-      .createdAt(Date.from(java.time.Instant.now()))
-      .build();
-
-    UserEntity savedUser = userRepository.save(userEntity);
-
-    log.info("Created user: {}", savedUser.getEmail());
-
-    return new CreateUserResponse(
-      savedUser.getEmail(),
-      savedUser.getId()
-    );
-  }
+  private final UserAvailabilityPool userAvailabilityPool;
 
   @Override
   @Transactional(readOnly = true)
@@ -122,13 +87,11 @@ public class UserService implements UserProfileProvider {
       updateUserStatus.filters().gender()
     );
 
-    domainEventPublisher.publish(
-      new UserChangeStatusToAvailableEvent(
-        response,
-        searchArea,
-        searchPreferences
-      )
-    );
+    userAvailabilityPool.add(new UserChangeStatusToAvailable(
+      response,
+      searchArea,
+      searchPreferences
+    ));
 
     return new UpdateUserStatus(user.getId(), user.getStatus());
   }
@@ -142,8 +105,8 @@ public class UserService implements UserProfileProvider {
 
     user.changeStatus(UserStatus.UNAVAILABLE);
 
-    domainEventPublisher.publish(
-      new UserChangeStatusToUnavailableEvent(
+    userAvailabilityPool.remove(
+      new UserChangeStatusToUnavailable(
         userId,
         user.getStatus()
       )
@@ -152,15 +115,11 @@ public class UserService implements UserProfileProvider {
   return new UpdateUserStatus(userId, user.getStatus());
   }
 
-  //TODO for future changes - only for testing purposes
   @Transactional(readOnly = true)
-  public UUID login(LoginDto credentials) {
-    UserEntity user = userRepository.findByEmail(credentials.email()).orElseThrow(() ->
-      new UserNotFoundException(credentials.email()));
-    if(!passwordEncoder.matches(credentials.password(), user.getPassword())){
-      log.warn("Invalid credentials");
-      throw new RuntimeException("Invalid credentials");
-    }
-    return user.getId();
+  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    UserEntity user = userRepository.findByEmail(username)
+      .orElseThrow(() -> new UsernameNotFoundException("User with email " + username + " not found."));
+
+    return AuthenticatedUserPrincipal.fromUser(user);
   }
 }

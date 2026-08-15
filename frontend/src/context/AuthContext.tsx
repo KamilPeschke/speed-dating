@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
-import { api } from '../lib/api'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { api, setAccessToken } from '../lib/api'
 import type { CreateUserRequest, Gender } from '../lib/types'
 
 export interface Session {
@@ -39,10 +39,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     else localStorage.removeItem(KEY)
   }, [])
 
+  // Access token żyje tylko w pamięci — po odświeżeniu strony trzeba go odzyskać
+  // z httpOnly cookie refresh_token, zanim jakiekolwiek chronione żądanie zadziała.
+  useEffect(() => {
+    if (!session) return
+    let cancelled = false
+    api
+      .refresh()
+      .then((res) => {
+        if (!cancelled) setAccessToken(res.token)
+      })
+      .catch(() => {
+        if (!cancelled) persist(null)
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const register = useCallback(
     async (data: CreateUserRequest) => {
       const res = await api.createUser(data)
-      // rejestracja zwraca tylko { email, uuid } — resztę profilu znamy z formularza
+      setAccessToken(res.token)
+      // rejestracja zwraca tylko { email, uuid, token, ... } — resztę profilu znamy z formularza
       persist({
         userId: res.uuid,
         email: res.email,
@@ -58,14 +78,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const uuid = await api.login(email, password)
-      // login zwraca sam UUID — brak GET /user/me na backendzie, więc profil zostaje pusty
-      persist({ userId: uuid, email })
+      const res = await api.login(email, password)
+      setAccessToken(res.token)
+      persist({ userId: res.uuid, email: res.email })
     },
     [persist],
   )
 
-  const logout = useCallback(() => persist(null), [persist])
+  const logout = useCallback(() => {
+    void api.logout().catch(() => {})
+    setAccessToken(null)
+    persist(null)
+  }, [persist])
 
   return (
     <AuthContext.Provider value={{ session, register, login, logout }}>

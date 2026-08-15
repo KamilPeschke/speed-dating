@@ -32,13 +32,25 @@ export class ApiNotImplementedError extends ApiError {
   }
 }
 
+// Access token żyje tylko w pamięci (nie w localStorage — ochrona przed kradzieżą przez XSS).
+// Po odświeżeniu strony AuthContext odzyskuje go z httpOnly cookie refresh_token przez /user/refresh.
+let accessToken: string | null = null
+
+export function setAccessToken(token: string | null): void {
+  accessToken = token
+}
+
 /** Wszystkie istniejące endpointy backendu Java są POST-ami. */
 async function post<T>(path: string, body?: unknown): Promise<T> {
   let res: Response
   try {
     res = await fetch(BASE + path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {
@@ -71,15 +83,21 @@ export const api = {
   /** POST /api/user/create */
   createUser: (data: CreateUserRequest) => post<CreateUserResponse>('/user/create', data),
 
-  /** POST /api/user/login — zwraca goły UUID jako JSON-owy string */
-  login: (email: string, password: string) => post<string>('/user/login', { email, password }),
+  /** POST /api/user/login — zwraca CreateUserResponse (email, uuid, token, tokenType, expiresInMs) */
+  login: (email: string, password: string) => post<CreateUserResponse>('/user/login', { email, password }),
 
-  /** POST /api/user/{id}/status-available — dodaje do puli Redis GEO i triggeruje discovery */
-  setAvailable: (userId: string, localization: Localization, filters: Filters) =>
-    post<UpdateUserStatus>(`/user/${userId}/status-available`, { localization, filters }),
+  /** POST /api/user/refresh — mintuje nowy access token na podstawie httpOnly cookie refresh_token */
+  refresh: () => post<CreateUserResponse>('/user/refresh'),
 
-  /** POST /api/user/{id}/status-unavailable — usuwa z puli */
-  setUnavailable: (userId: string) => post<UpdateUserStatus>(`/user/${userId}/status-unavailable`),
+  /** POST /api/user/logout — unieważnia refresh token po stronie backendu */
+  logout: () => post<void>('/user/logout'),
+
+  /** POST /api/user/status-available — userId bierze backend z JWT, nie z URL-a */
+  setAvailable: (localization: Localization, filters: Filters) =>
+    post<UpdateUserStatus>('/user/status-available', { localization, filters }),
+
+  /** POST /api/user/status-unavailable — usuwa z puli */
+  setUnavailable: () => post<UpdateUserStatus>('/user/status-unavailable'),
 
   /** POST /api/discovery/refresh/{userId} — userAge/userGender uzupełnia backend z bazy */
   refreshDiscovery: (userId: string, localization: Localization, filters: Filters) =>
